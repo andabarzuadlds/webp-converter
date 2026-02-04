@@ -1,6 +1,7 @@
 "use client";
 
 import { formatBytes } from "@/lib/formatBytes";
+import type { ImageFormat } from "@/lib/imageToWebp";
 
 export interface ImageItemData {
   id: string;
@@ -9,10 +10,11 @@ export interface ImageItemData {
   width: number;
   height: number;
   originalSize: number;
-  webpUrl: string | null;
-  webpSize: number | null;
+  convertedUrl: string | null;
+  convertedSize: number | null;
   error: string | null;
   converting: boolean;
+  outputFormat: ImageFormat;
 }
 
 interface ImageCardProps {
@@ -21,11 +23,20 @@ interface ImageCardProps {
   onRemove: () => void;
 }
 
+const formatLabel: Record<ImageFormat, string> = {
+  png: "PNG",
+  jpg: "JPG",
+  webp: "WebP",
+  heic: "HEIC",
+};
+
 export function ImageCard({ item, onDownload, onRemove }: ImageCardProps) {
   const reduction =
-    item.webpSize != null && item.originalSize > 0
-      ? ((1 - item.webpSize / item.originalSize) * 100).toFixed(1)
+    item.convertedSize != null && item.originalSize > 0
+      ? ((1 - item.convertedSize / item.originalSize) * 100).toFixed(1)
       : null;
+
+  const outputFormatLabel = formatLabel[item.outputFormat];
 
   return (
     <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
@@ -42,7 +53,7 @@ export function ImageCard({ item, onDownload, onRemove }: ImageCardProps) {
           />
         </div>
         <div className="rounded-lg border border-slate-100 bg-slate-50 p-2 dark:border-slate-600 dark:bg-slate-700/50">
-          <p className="mb-1 text-xs font-medium text-slate-500 dark:text-slate-400">WebP</p>
+          <p className="mb-1 text-xs font-medium text-slate-500 dark:text-slate-400">{outputFormatLabel}</p>
           {item.converting ? (
             <div className="flex h-24 items-center justify-center">
               <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-blue-500" />
@@ -51,10 +62,10 @@ export function ImageCard({ item, onDownload, onRemove }: ImageCardProps) {
             <div className="flex h-24 items-center justify-center text-xs text-red-600 dark:text-red-400">
               {item.error}
             </div>
-          ) : item.webpUrl ? (
+          ) : item.convertedUrl ? (
             <img
-              src={item.webpUrl}
-              alt={`${item.fileName} WebP`}
+              src={item.convertedUrl}
+              alt={`${item.fileName} ${outputFormatLabel}`}
               className="h-24 w-full object-contain"
             />
           ) : (
@@ -72,13 +83,17 @@ export function ImageCard({ item, onDownload, onRemove }: ImageCardProps) {
           <dd>{formatBytes(item.originalSize)}</dd>
         </div>
         <div className="flex justify-between">
-          <dt>WebP</dt>
-          <dd>{item.webpSize != null ? formatBytes(item.webpSize) : "—"}</dd>
+          <dt>{outputFormatLabel}</dt>
+          <dd>{item.convertedSize != null ? formatBytes(item.convertedSize) : "—"}</dd>
         </div>
         {reduction != null && (
-          <div className="flex justify-between font-medium text-emerald-600 dark:text-emerald-400">
-            <dt>Reducción</dt>
-            <dd>−{reduction}%</dd>
+          <div className={`flex justify-between font-medium ${
+            parseFloat(reduction) > 0
+              ? "text-emerald-600 dark:text-emerald-400"
+              : "text-slate-600 dark:text-slate-400"
+          }`}>
+            <dt>Diferencia</dt>
+            <dd>{parseFloat(reduction) > 0 ? `−${reduction}%` : `+${Math.abs(parseFloat(reduction))}%`}</dd>
           </div>
         )}
       </dl>
@@ -86,7 +101,7 @@ export function ImageCard({ item, onDownload, onRemove }: ImageCardProps) {
         <button
           type="button"
           onClick={onDownload}
-          disabled={!item.webpUrl || item.converting}
+          disabled={!item.convertedUrl || item.converting}
           className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
         >
           Descargar

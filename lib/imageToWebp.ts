@@ -1,13 +1,18 @@
+export type ImageFormat = "png" | "jpg" | "webp" | "heic";
+
+export interface ConversionOptions {
+  quality: number; // 0.01 - 1.0
+  maxWidth?: number;
+  outputFormat: ImageFormat;
+}
+
 /**
- * Convierte una imagen (File o URL) a Blob WebP usando Canvas API.
+ * Convierte una imagen (File o URL) a un formato específico usando Canvas API.
  * Soporta redimensionamiento opcional por maxWidth manteniendo aspect ratio.
  */
-export function imageToWebp(
+export function convertImage(
   source: File | string,
-  options: {
-    quality: number; // 0.01 - 1.0
-    maxWidth?: number;
-  }
+  options: ConversionOptions
 ): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -44,13 +49,41 @@ export function imageToWebp(
       }
       ctx.drawImage(img, 0, 0, width, height);
 
+      // Determinar el MIME type según el formato de salida
+      let mimeType: string;
+      switch (options.outputFormat) {
+        case "png":
+          mimeType = "image/png";
+          break;
+        case "jpg":
+          mimeType = "image/jpeg";
+          break;
+        case "webp":
+          mimeType = "image/webp";
+          break;
+        case "heic":
+          // HEIC no es soportado nativamente por Canvas, convertir a JPEG como fallback
+          mimeType = "image/jpeg";
+          break;
+        default:
+          mimeType = "image/png";
+      }
+
+      // Para PNG, la calidad se ignora, pero para JPEG y WebP sí se usa
+      const quality = options.outputFormat === "png" ? undefined : options.quality;
+
       canvas.toBlob(
         (blob) => {
           if (blob) revokeAndResolve(blob);
-          else revokeAndReject(new Error("toBlob no devolvió datos (WebP puede no estar soportado)"));
+          else {
+            const errorMsg = options.outputFormat === "webp"
+              ? "toBlob no devolvió datos (WebP puede no estar soportado)"
+              : "Error al convertir la imagen";
+            revokeAndReject(new Error(errorMsg));
+          }
         },
-        "image/webp",
-        options.quality
+        mimeType,
+        quality
       );
     };
 
@@ -73,6 +106,21 @@ export function imageToWebp(
       reject(err);
     };
   });
+}
+
+/**
+ * @deprecated Usa convertImage en su lugar
+ * Convierte una imagen (File o URL) a Blob WebP usando Canvas API.
+ * Soporta redimensionamiento opcional por maxWidth manteniendo aspect ratio.
+ */
+export function imageToWebp(
+  source: File | string,
+  options: {
+    quality: number; // 0.01 - 1.0
+    maxWidth?: number;
+  }
+): Promise<Blob> {
+  return convertImage(source, { ...options, outputFormat: "webp" });
 }
 
 /**
@@ -116,4 +164,24 @@ export function checkWebPSupport(): Promise<boolean> {
       0.8
     );
   });
+}
+
+/**
+ * Obtiene el MIME type aceptado para un formato de imagen.
+ */
+export function getAcceptString(formats: ImageFormat[]): string {
+  const mimeMap: Record<ImageFormat, string> = {
+    png: "image/png",
+    jpg: "image/jpeg",
+    webp: "image/webp",
+    heic: "image/heic,image/heif",
+  };
+  return formats.map(f => mimeMap[f]).join(",");
+}
+
+/**
+ * Obtiene la extensión de archivo para un formato.
+ */
+export function getFileExtension(format: ImageFormat): string {
+  return format === "jpg" ? "jpg" : format;
 }
