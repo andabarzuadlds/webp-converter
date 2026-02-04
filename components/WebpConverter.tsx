@@ -105,13 +105,14 @@ export function WebpConverter() {
             convertedSize: null,
             error: null,
             converting: true,
+            outputFormat,
           } satisfies ImageItem;
         })
       ).then((newItems) => {
         setItems((prev) => [...prev, ...newItems]);
       });
     },
-    [inputFormat]
+    [inputFormat, outputFormat]
   );
 
   const convertAll = useCallback(async () => {
@@ -184,6 +185,8 @@ export function WebpConverter() {
     }
     if (items.length === 0) return;
     if (outputFormat === "webp" && webpSupported !== true) return;
+    // Actualizar outputFormat en todos los items existentes
+    setItems((prev) => prev.map((item) => ({ ...item, outputFormat })));
     convertAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intencional: quality, validMaxWidth y outputFormat
   }, [quality, validMaxWidth, outputFormat]);
