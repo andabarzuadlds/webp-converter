@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "JPG/PNG → WebP Converter",
-  description: "Convierte imágenes JPG y PNG a WebP en el navegador.",
+  title: "Convertidor de Imágenes - WebP, JPG, PNG",
+  description: "Convierte imágenes entre diferentes formatos (WebP, JPG, PNG, HEIC) en el navegador. Sin subir a ningún servidor.",
 };
 
 export default function RootLayout({
