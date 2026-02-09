@@ -35,6 +35,7 @@ Tu sitio quedará en `https://webp-converter.pages.dev` (o el nombre que hayas p
    - **Build command:** `npm run build`
    - **Build output directory:** `out`
    - **Root directory:** (dejar vacío si el repo es solo este proyecto).
+   - **⚠️ IMPORTANTE:** NO configures un "Deploy command" personalizado. Déjalo vacío para que Cloudflare Pages detecte automáticamente la carpeta `out`.
 
 4. **Variables de entorno:** no hace falta ninguna (todo es client-side).
 
@@ -80,3 +81,20 @@ Tu sitio quedará en `https://webp-converter.pages.dev` (o el nombre que hayas p
 | Deploy | Subir `out`, conectar Git, o `wrangler pages deploy out` |
 
 Si algo no carga (rutas o assets), revisa que en Cloudflare el **Build output directory** sea `out` y que hayas subido el **contenido** de `out`, no el proyecto entero.
+
+---
+
+## ⚠️ Solución de problemas
+
+### Error: "Missing entry-point to Worker script"
+
+Si ves este error en los logs de Cloudflare Pages, significa que tienes configurado un **Deploy command** personalizado que está ejecutando `npx wrangler deploy` (comando para Workers).
+
+**Solución:**
+1. Ve a tu proyecto en Cloudflare Pages Dashboard
+2. Ve a **Settings** → **Builds & deployments**
+3. Busca el campo **Deploy command** y **déjalo vacío** o elimínalo
+4. Asegúrate de que **Build output directory** esté configurado como `out`
+5. Guarda los cambios y vuelve a desplegar
+
+Cloudflare Pages detectará automáticamente la carpeta `out` después del build y la desplegará correctamente.

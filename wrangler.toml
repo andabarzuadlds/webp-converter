@@ -1,0 +1,5 @@
+# Configuración para Cloudflare Pages
+# Este archivo configura el despliegue de Pages
+
+name = "webp-converter"
+compatibility_date = "2026-02-09"
